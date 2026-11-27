@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>HsmSim</RootNamespace>
+    <AssemblyName>HsmSim</AssemblyName>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet">
+    <PackageId>HsmSim</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Victor Condack</Authors>
+    <Description>Payment card cryptography for .NET: ISO 9564 PIN blocks (formats 0-4), TDES DUKPT (ANSI X9.24-1), Visa CVV/PVV, IBM 3624 offsets, EMV ARQC/ARPC, FF1 format-preserving encryption, a PAN tokenization vault and a client for the hsm-sim-go payment HSM simulator. Output is byte-identical to the Go implementation.</Description>
+    <PackageTags>hsm;payments;pin;dukpt;emv;arqc;cvv;tokenization;ff1;pci</PackageTags>
+    <RepositoryUrl>https://github.com/victorcondackdev/hsm-sim-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/victorcondackdev/hsm-sim-dotnet</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Copyright (c) 2026 Victor Condack</Copyright>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="HsmSim.Tests" />
+  </ItemGroup>
+
+</Project>

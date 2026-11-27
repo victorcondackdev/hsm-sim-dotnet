@@ -1,0 +1,141 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build:
+    name: Build, test and pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore HsmSim.sln
+
+      - name: Build (warnings are errors)
+        run: dotnet build HsmSim.sln -c Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test tests/HsmSim.Tests/HsmSim.Tests.csproj -c Release --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+          --logger "trx;LogFileName=results.trx"
+          --logger "console;verbosity=normal"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+          if-no-files-found: ignore
+
+      - name: Pack
+        run: dotnet pack src/HsmSim/HsmSim.csproj -c Release --no-build -o artifacts
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget
+          path: artifacts/*nupkg
+          if-no-files-found: error
+
+  parity:
+    name: Go parity vectors are up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: hsm-sim-dotnet
+
+      - uses: actions/checkout@v4
+        with:
+          repository: victorcondackdev/hsm-sim-go
+          path: hsm-sim-go
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: hsm-sim-go/go.mod
+
+      - name: Regenerate and diff
+        working-directory: hsm-sim-dotnet
+        run: |
+          go -C tools/vecgen run . > tests/HsmSim.Tests/Parity/GoVectors.g.cs
+          git diff --exit-code -- tests/HsmSim.Tests/Parity/GoVectors.g.cs
+
+  interop:
+    name: .NET client against the Go HSM server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: hsm-sim-dotnet
+
+      - uses: actions/checkout@v4
+        with:
+          repository: victorcondackdev/hsm-sim-go
+          path: hsm-sim-go
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: hsm-sim-go/go.mod
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Start hsm-sim
+        working-directory: hsm-sim-go
+        run: |
+          go build -o /tmp/hsm-sim ./cmd/hsm-sim
+          /tmp/hsm-sim -addr 127.0.0.1:1500 > /tmp/hsm-sim.log &
+          sleep 1
+
+      - name: Run the .NET demo against it
+        working-directory: hsm-sim-dotnet
+        run: dotnet run --project samples/HsmSim.Demo -c Release -- 127.0.0.1 1500
+
+      - name: HSM log
+        if: always()
+        run: cat /tmp/hsm-sim.log
+
+  trimming:
+    name: Trimming smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish trimmed consumer
+        run: |
+          mkdir -p /tmp/aotcheck && cd /tmp/aotcheck
+          dotnet new console --force -o . -n AotCheck
+          dotnet add reference "$GITHUB_WORKSPACE/src/HsmSim/HsmSim.csproj"
+          cat > Program.cs <<'CS'
+          using HsmSim.Keys;
+          using HsmSim.PinBlocks;
+          byte[] k = KeyMaterial.Hex("0123456789ABCDEFFEDCBA9876543210");
+          System.Console.WriteLine(KeyMaterial.Kcv(k) + " " + KeyMaterial.ToHex(PinBlock.Encrypt(PinBlockFormat.Iso0, k, "1234", "4111111111111111")));
+          CS
+          dotnet publish -c Release -r linux-x64 --self-contained -p:PublishTrimmed=true -p:TreatWarningsAsErrors=true -o out
+          ./out/AotCheck
