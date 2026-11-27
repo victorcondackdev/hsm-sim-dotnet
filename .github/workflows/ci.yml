@@ -70,7 +70,7 @@ jobs:
           repository: victorcondackdev/hsm-sim-go
           path: hsm-sim-go
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: hsm-sim-go/go.mod
 
@@ -93,7 +93,7 @@ jobs:
           repository: victorcondackdev/hsm-sim-go
           path: hsm-sim-go
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: hsm-sim-go/go.mod
 
