@@ -19,7 +19,7 @@ jobs:
     name: Build, test and pack
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -61,11 +61,11 @@ jobs:
     name: Go parity vectors are up to date
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: hsm-sim-dotnet
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: victorcondackdev/hsm-sim-go
           path: hsm-sim-go
@@ -84,11 +84,11 @@ jobs:
     name: .NET client against the Go HSM server
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: hsm-sim-dotnet
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: victorcondackdev/hsm-sim-go
           path: hsm-sim-go
@@ -120,7 +120,7 @@ jobs:
     name: Trimming smoke test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v4
         with:
